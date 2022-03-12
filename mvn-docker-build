@@ -1,0 +1,125 @@
+#!/bin/bash
+
+# Order of arguments does not matter.
+
+# This script builds mvn application into an image.
+# It takes a mvn project location -m.
+# It takes a Dockerfile location -d.
+# It takes output image name -t name:tag.
+# It takes a docker-compose.yml file -dc
+# It takes the containers to kill and remove -k
+
+# mvn-docker-build -m . -d application/Dockerfile -dc application/docker-compose.yml -t my-image:0.0.1 -k 123 432
+# cd /home/<user>/.../. (-m)
+# mvn clean install
+# cd /home/<user>/.../application (-d)
+# docker build -f /home/<user>/.../application . -t my-image:0.0.1
+# docker kill 123
+# docker rm 123
+# docker kill 432
+# docker rm 432
+# cd /home/<user>/.../application (-dc)
+# docker-compose up
+
+if [ $# -eq 0 ]; then echo "no args"; exit 1; fi
+
+ORIGINAL_LOCATION=${PWD}/
+M_MODE="M_MODE"
+D_MODE="D_MODE"
+T_MODE="T_MODE"
+DC_MODE="DC_MODE"
+KILL_MODE="KILL_MODE"
+MODE=
+M="unset"
+D="unset"
+T="unset"
+DC="unset"
+KILL_ARRAY=()
+
+check_if_directory() {
+  if [ -d "$1" ]; then return 1; else return 0; fi
+}
+
+check_if_file() {
+  if [ -f "$1" ]; then return 1; else return 0; fi
+}
+
+echo_help() {
+  echo "-m: Location of maven project to build."
+  echo "-d: Path to Dockerfile to build image."
+  echo "-t: Name:tag of output image."
+  echo "-dc: Path to docker-compose.yml to run."
+  echo "-k: Names of containers to kill before running docker-compose.yml"
+}
+
+# 2
+process_argument_value() {
+  case $MODE in
+  M_MODE)
+    check_if_directory "$1"
+    local is_directory=$?
+    if [ $is_directory -eq 1 ]; then M=$ORIGINAL_LOCATION$1; else echo "$1 is not a directory. Exiting..."; exit 1; fi;;
+  D_MODE)
+    check_if_file "$1"
+    local is_file=$?
+    if [ $is_file -eq 1 ]; then D=$ORIGINAL_LOCATION$1; else echo "$1 is not a file. Exiting..."; exit 1; fi;;
+  T_MODE)
+    if [[ ! "$1" =~ \w{1,}:\w{1,} ]]; then T=$1; else echo "$1 does nto match name:tag pattern..."; exit 1; fi;;
+  DC_MODE)
+    check_if_file "$1"
+    local is_file=$?
+    if [ $is_file -eq 1 ]; then DC=$ORIGINAL_LOCATION$1; else echo "$1 is not a file. Exiting..."; exit 1; fi;;
+  KILL_MODE)
+    KILL_ARRAY+=("$1");;
+  esac
+}
+
+# 1
+while [ $# -gt 0 ]; do
+  case $1 in
+  -m)
+    MODE=$M_MODE;;
+  -d)
+    MODE=$D_MODE;;
+  -t)
+    MODE=$T_MODE;;
+  -dc)
+    MODE=$DC_MODE;;
+  -k)
+    MODE=$KILL_MODE;;
+  -h)
+    echo_help; exit 1;;
+  *)
+    process_argument_value "$1";;
+  esac
+  shift 1
+done
+
+# 3
+# -m
+if [ ! "$M" == "unset" ]; then
+  cd "$M" || exit 1
+  mvn clean install
+fi
+
+# -d -t
+if [ ! "$D" == "unset" ]; then
+  cd "${D%/*}" || exit 1
+  docker build -f "$D" . -t "$T"
+fi
+
+# -k
+if [ ! ${#KILL_ARRAY[@]} -eq 0 ]; then
+  for container in "${KILL_ARRAY[@]}"; do
+    docker kill "$container"; # echo "Killed container: $container"
+    docker rm "$container"; # echo "Removed container: $container"
+  done
+fi
+
+# -dc
+if [ ! "$DC" == "unset" ]; then
+  cd "${DC%/*}" || exit 1
+  docker-compose up
+fi
+
+cd "$ORIGINAL_LOCATION" || exit 1

@@ -1,0 +1,15 @@
+#!/bin/bash
+sudo systemctl is-active sshd
+IS_ACTIVE=$?
+if [ "$IS_ACTIVE" -gt 0 ]
+then
+	echo "Starting sshd..."
+	sudo systemctl start sshd
+	echo "sshd started"
+else
+	echo "Stopping sshd..."
+	sudo systemctl stop sshd
+	echo "sshd stopped"
+
+fi
+sudo systemctl is-active sshd

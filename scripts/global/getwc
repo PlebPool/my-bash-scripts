@@ -1,0 +1,3 @@
+#!/bin/bash
+if [ $# -eq 0 ]; then exit 1; fi
+find . -name '*'$1  | xargs wc -l

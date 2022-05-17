@@ -1,0 +1,4 @@
+#!/bin/bash
+if [ $# -eq 0 ]; then echo "cdls [FOLDER] -- Equivalent to 'cd [FOLDER] && ls"; exit 1; fi
+cd $1 && ls
+$SHELL

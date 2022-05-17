@@ -1,0 +1,4 @@
+#!/bin/bash
+if [ $# -eq 0 ]; then echo "cdla [FOLDER] -- Equivalent to 'cd [FOLDER] && ls -la"; exit 1; fi
+cd $1 && ls -la
+$SHELL

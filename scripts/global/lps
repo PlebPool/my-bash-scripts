@@ -1,0 +1,4 @@
+#!/bin/bash
+pacman --quiet -S "$1"
+SUCCESS_IF_ZERO=$?
+if [ "$SUCCESS_IF_ZERO" -eq "0" ]; then echo "$1" >> /var/pacman_user_installed.log; fi

@@ -1,0 +1,3 @@
+#!/bin/bash
+pacman -Rns "$1"
+grep -v "$1" /var/pacman_user_installed.log > /var/tmpfile && mv /var/tmpfile /var/pacman_user_installed.log
